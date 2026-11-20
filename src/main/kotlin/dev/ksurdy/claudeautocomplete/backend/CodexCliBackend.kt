@@ -12,13 +12,38 @@ import kotlinx.coroutines.withTimeout
 class CodexCliBackend(
     private val locate: (String) -> String? = CodexCliLocator::locate,
     private val usage: UsageTracker = UsageTracker(ProviderKind.Codex),
+    private val clock: () -> Long = System::currentTimeMillis,
     private val processFactory: CodexProcessFactory = RealCodexProcessFactory,
 ) {
+    private val appServer = CodexAppServerBackend(locate, usage, processFactory)
+
     val lastUsage: UsageLimits? get() = usage.last
 
     fun addUsageListener(listener: (UsageLimits) -> Unit): () -> Unit = usage.addListener(listener)
 
-    suspend fun complete(context: CompletionContext, config: CodexConfig): CompletionResult {
+    @Volatile
+    private var appServerFailedAt = 0L
+
+    /**
+     * With a persistent process the completion runs on a long-lived `codex app-server` and streams; when that fails
+     * for an unexpected reason the request falls back to a one-shot `codex exec` and the server is skipped for a while.
+     */
+    suspend fun complete(context: CompletionContext, config: CodexConfig, onText: (String) -> Unit = {}): CompletionResult {
+        if (config.persistentProcess && clock() - appServerFailedAt >= APP_SERVER_COOLDOWN_MS) {
+            val result = appServer.complete(context, config, onText)
+            if (result !is CompletionResult.Failure || result.kind != FailureKind.Other) return result
+            appServerFailedAt = clock()
+        }
+        return completeOnce(context, config)
+    }
+
+    suspend fun warmUp(config: CodexConfig) {
+        if (config.persistentProcess) appServer.warmUp(config)
+    }
+
+    fun shutdown() = appServer.shutdown()
+
+    private suspend fun completeOnce(context: CompletionContext, config: CodexConfig): CompletionResult {
         val binary = locate(config.codexPath) ?: return notFound()
         val process = try {
             processFactory.start(binary, config, CodexMode.Exec)
@@ -118,5 +143,6 @@ class CodexCliBackend(
     private companion object {
         const val INITIALIZE_ID = 1
         const val RATE_LIMITS_ID = 2
+        const val APP_SERVER_COOLDOWN_MS = 5 * 60_000L
     }
 }

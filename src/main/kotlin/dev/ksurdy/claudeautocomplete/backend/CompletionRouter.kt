@@ -26,13 +26,16 @@ class CompletionRouter(
         activate(config.provider)
         return when (config.provider) {
             ProviderKind.Claude -> claude.complete(context, config.claude, onText)
-            ProviderKind.Codex -> codex.complete(context, config.codex)
+            ProviderKind.Codex -> codex.complete(context, config.codex, onText)
         }
     }
 
     suspend fun warmUp(config: BackendConfig) {
         activate(config.provider)
-        if (config.provider == ProviderKind.Claude) claude.warmUp(config.claude)
+        when (config.provider) {
+            ProviderKind.Claude -> claude.warmUp(config.claude)
+            ProviderKind.Codex -> codex.warmUp(config.codex)
+        }
     }
 
     suspend fun refreshUsage(config: BackendConfig): UsageLimits? {
@@ -50,12 +53,13 @@ class CompletionRouter(
 
     fun shutdown() {
         claude.shutdown()
+        codex.shutdown()
     }
 
     @Synchronized
     private fun activate(provider: ProviderKind) {
         if (active == provider) return
-        if (provider == ProviderKind.Codex) claude.shutdown()
+        if (provider == ProviderKind.Codex) claude.shutdown() else codex.shutdown()
         active = provider
     }
 

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0-aheeb.1] - 2026-11-20 (fork aheeb/claudex-autocomplete-plugin)
+
+### Changed
+
+- Codex: completions run on one long-lived `codex app-server` instead of a new `codex exec` per request; each suggestion is a fresh ephemeral thread. Median latency on gpt-6-luna dropped from 4.4 s to 2.8 s, first text from 4.4 s to 2.4 s.
+- Codex: replies stream into the editor as they are generated, and a request is interrupted with `turn/interrupt` when you type on.
+- Codex: the completion process no longer loads the user's MCP servers, hooks, plugins, skills or agent tools, and sends the completion prompt as the base instructions. Input per suggestion fell from about 20k to about 10k tokens.
+- Codex: when the app-server fails, the request falls back to `codex exec` and the server is skipped for five minutes.
+- Claude: "Failed to authenticate" and "OAuth session expired" are reported as not logged in, with the `/login` hint.
+
 ## [1.1.1] - 2026-10-24
 
 ### Changed

@@ -27,6 +27,12 @@
     <p>Claudex Autocomplete is an independent, open-source project (GPL-3.0). It is not affiliated with, endorsed or sponsored by Anthropic or OpenAI. Claude is a trademark of Anthropic; Codex is a trademark of OpenAI.</p>
   ]]></description>
   <change-notes><![CDATA[
+    <h4>1.2.0-aheeb.1 (fork)</h4>
+    <ul>
+      <li>Codex: one long-lived <code>codex app-server</code> instead of <code>codex exec</code> per suggestion, streaming, interrupt when you type on</li>
+      <li>Codex: no MCP servers, hooks, plugins, skills or agent tools in the completion process; about half the prompt tokens</li>
+      <li>Claude: expired logins are reported as not logged in</li>
+    </ul>
     <h4>1.1.1</h4>
     <ul>
       <li>Whole method when you type a signature such as <code>public function save(</code> character by character; the auto-inserted <code>)</code> no longer cuts it to one line</li>

@@ -26,6 +26,8 @@ object ProcessSupport {
         }
     }
 
+    val workDirectory: String get() = workDir.toString()
+
     private val live: MutableSet<Process> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     private val shutdownHook: Unit by lazy {
